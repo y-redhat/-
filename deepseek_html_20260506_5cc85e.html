@@ -1,0 +1,437 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>刺激と反応・排出 | 60問フラッシュカード</title>
+    <style>
+        :root {
+            --bg: #f0f4f1;
+            --card-bg: #ffffff;
+            --text: #2c3e50;
+            --text-light: #5a6c7d;
+            --cat-basic: #4A90D9;
+            --cat-mechanism: #27AE60;
+            --cat-advanced: #8E44AD;
+            --shadow: 0 10px 30px rgba(0,0,0,0.06);
+            --radius: 20px;
+            --font: 'Hiragino Sans', 'Hiragino Kaku Gothic ProN', 'Noto Sans JP', sans-serif;
+        }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: var(--font);
+            background: linear-gradient(150deg, #edf3ef 0%, #f5f8f5 50%, #eef3ef 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 16px;
+        }
+        .container {
+            width: 100%;
+            max-width: 480px;
+            display: flex;
+            flex-direction: column;
+            gap: 18px;
+        }
+        .header {
+            text-align: center;
+        }
+        .header h1 {
+            font-size: 1.6rem;
+            font-weight: 700;
+            color: #1a3c2a;
+            letter-spacing: 0.02em;
+        }
+        .header .sub {
+            font-size: 0.85rem;
+            color: #6b8877;
+            margin-top: 4px;
+        }
+        .stats {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            background: rgba(255,255,255,0.8);
+            backdrop-filter: blur(10px);
+            border-radius: 30px;
+            padding: 8px 16px;
+            font-size: 0.8rem;
+            font-weight: 600;
+            color: #3d5a4b;
+            border: 1px solid rgba(0,0,0,0.05);
+        }
+        .stats .dots {
+            display: flex;
+            gap: 6px;
+        }
+        .stats .dots span {
+            width: 10px; height: 10px; border-radius: 50%;
+        }
+        .dot-basic { background: var(--cat-basic); }
+        .dot-mechanism { background: var(--cat-mechanism); }
+        .dot-advanced { background: var(--cat-advanced); }
+        .progress-wrap {
+            flex: 1; height: 7px; background: #e0e8e2; border-radius: 7px; margin: 0 14px; overflow: hidden;
+        }
+        .progress-fill {
+            height: 100%; background: linear-gradient(90deg, #27AE60, #4A90D9); border-radius: 7px;
+            transition: width 0.3s ease;
+        }
+        .card-scene {
+            width: 100%;
+            aspect-ratio: 1 / 1.25;
+            cursor: pointer;
+            perspective: 800px;
+        }
+        .card-inner {
+            position: relative;
+            width: 100%;
+            height: 100%;
+            transition: transform 0.45s cubic-bezier(0.23, 1, 0.32, 1);
+            transform-style: preserve-3d;
+        }
+        .card-inner.flipped {
+            transform: rotateY(180deg);
+        }
+        .card-face {
+            position: absolute;
+            inset: 0;
+            backface-visibility: hidden;
+            -webkit-backface-visibility: hidden;
+            border-radius: var(--radius);
+            background: var(--card-bg);
+            box-shadow: var(--shadow);
+            display: flex;
+            flex-direction: column;
+            padding: 24px 20px;
+            overflow-y: auto;
+        }
+        .card-face.back {
+            transform: rotateY(180deg);
+            background: #fdfdfd;
+            justify-content: flex-start;
+        }
+        .badge {
+            position: absolute;
+            top: 14px;
+            left: 18px;
+            font-size: 0.7rem;
+            font-weight: 700;
+            letter-spacing: 0.04em;
+            padding: 4px 12px;
+            border-radius: 20px;
+            color: #fff;
+            text-transform: uppercase;
+        }
+        .badge.basic { background: var(--cat-basic); }
+        .badge.mechanism { background: var(--cat-mechanism); }
+        .badge.advanced { background: var(--cat-advanced); }
+        .card-num {
+            position: absolute;
+            top: 14px;
+            right: 18px;
+            font-size: 0.8rem;
+            font-weight: 700;
+            color: #bcc7c0;
+        }
+        .question-text {
+            font-size: 1.05rem;
+            font-weight: 600;
+            color: var(--text);
+            text-align: center;
+            line-height: 1.7;
+            margin-top: 30px;
+            word-break: break-word;
+        }
+        .flip-hint {
+            position: absolute;
+            bottom: 14px;
+            left: 0; right: 0;
+            text-align: center;
+            font-size: 0.7rem;
+            color: #b0bfb6;
+            letter-spacing: 0.03em;
+        }
+        .answer-label {
+            font-size: 0.75rem;
+            font-weight: 700;
+            color: #8E44AD;
+            margin-bottom: 8px;
+            display: flex;
+            align-items: center;
+            gap: 4px;
+        }
+        .answer-main {
+            font-size: 1.15rem;
+            font-weight: 700;
+            color: #1a3c2a;
+            background: #eefaf1;
+            padding: 10px 16px;
+            border-radius: 12px;
+            display: inline-block;
+            margin-bottom: 12px;
+            border-left: 4px solid #27AE60;
+            word-break: break-word;
+        }
+        .explanation {
+            font-size: 0.85rem;
+            color: #4a5c52;
+            line-height: 1.7;
+        }
+        .explanation b { color: #1a3c2a; }
+        .controls {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+        .btn {
+            border: none;
+            padding: 12px 18px;
+            border-radius: 30px;
+            font-size: 0.85rem;
+            font-weight: 600;
+            cursor: pointer;
+            letter-spacing: 0.03em;
+            background: #fff;
+            color: #3d5a4b;
+            border: 1px solid rgba(0,0,0,0.08);
+            box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            transition: all 0.2s;
+            font-family: var(--font);
+            -webkit-tap-highlight-color: transparent;
+        }
+        .btn:active { transform: scale(0.96); }
+        .btn.primary {
+            background: #27AE60;
+            color: #fff;
+            border: none;
+            font-weight: 700;
+            padding: 13px 24px;
+        }
+        .btn.primary:active { background: #1e8c4a; }
+        .btn-icon {
+            width: 44px; height: 44px; border-radius: 50%; padding: 0;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 1.3rem; border: 1px solid rgba(0,0,0,0.08);
+            background: #fff;
+        }
+    </style>
+</head>
+<body>
+<div class="container">
+    <div class="header">
+        <h1>🧬 刺激と反応・排出</h1>
+        <div class="sub">1学期中間テスト対策 — 全60問フラッシュカード</div>
+    </div>
+
+    <div class="stats">
+        <div class="dots">
+            <span class="dot-basic"></span>
+            <span class="dot-mechanism"></span>
+            <span class="dot-advanced"></span>
+        </div>
+        <div class="progress-wrap">
+            <div class="progress-fill" id="progressFill" style="width:1.67%;"></div>
+        </div>
+        <span id="counter">1 / 60</span>
+    </div>
+
+    <div class="card-scene" id="cardScene" onclick="flipCard()">
+        <div class="card-inner" id="cardInner">
+            <div class="card-face front" id="frontFace">
+                <span class="badge basic" id="frontBadge">基礎</span>
+                <span class="card-num" id="frontNum">#1</span>
+                <div class="question-text" id="questionText"></div>
+                <span class="flip-hint">タップして解答を見る</span>
+            </div>
+            <div class="card-face back" id="backFace">
+                <span class="badge basic" id="backBadge">基礎</span>
+                <span class="card-num" id="backNum">#1</span>
+                <span class="answer-label">💡 解答と解説</span>
+                <div class="answer-main" id="answerMain"></div>
+                <div class="explanation" id="explanationText"></div>
+            </div>
+        </div>
+    </div>
+
+    <div class="controls">
+        <button class="btn-icon" id="btnPrev" onclick="prevCard()" aria-label="前へ">◀</button>
+        <button class="btn primary" id="btnFlip" onclick="flipCard()">💡 解答を見る</button>
+        <button class="btn" id="btnShuffle" onclick="shuffleCards()">🔀 シャッフル</button>
+        <button class="btn-icon" id="btnNext" onclick="nextCard()" aria-label="次へ">▶</button>
+    </div>
+</div>
+
+<script>
+    (function() {
+        // ---------- 60問データ ----------
+        const cards = [
+            // 基礎 (1-25)
+            { id:1, cat:'basic', catLabel:'基礎', q:'網膜にあり、明暗を敏感に感じ取る視細胞を何というか。', a:'桿体細胞（かんたいさいぼう）', e:'視細胞には<b>桿体細胞</b>と錐体細胞がある。桿体細胞は暗所で働き、明暗にきわめて敏感だが色は感じない。感光色素ロドプシンを含む。' },
+            { id:2, cat:'basic', catLabel:'基礎', q:'目に入る光の量を調節する、カメラの「しぼり」にあたる部分の名称を答えよ。', a:'虹彩（こうさい）', e:'虹彩の中の平滑筋が収縮・弛緩して瞳孔の大きさを変え、網膜への光量を調節する。明るいと瞳孔が小さくなる。' },
+            { id:3, cat:'basic', catLabel:'基礎', q:'耳の奥にある三つの輪状の管で、からだの回転を感知する部分を何というか。', a:'半規管（はんきかん）', e:'内部のリンパ液の動きで体の回転（角加速度）を感知する。前庭が「傾き」、半規管が「回転」を担当する。' },
+            { id:4, cat:'basic', catLabel:'基礎', q:'からだの傾きを感知する耳の器官を何というか。', a:'前庭（ぜんてい）', e:'卵形嚢と球形嚢からなり、重力や直線加速度による体の傾きを感知する平衡覚の受容器。' },
+            { id:5, cat:'basic', catLabel:'基礎', q:'音波の振動を電気信号に換える、うずまき管内の聴覚受容器の名称を答えよ。', a:'コルチ器（コルチき）', e:'蝸牛の基底膜上にある。有毛細胞が振動を活動電位に変換し、聴神経を通じて脳へ伝える。' },
+            { id:6, cat:'basic', catLabel:'基礎', q:'脳・脊髄をまとめて何神経というか。', a:'中枢神経（ちゅうすうしんけい）', e:'神経系は中枢神経と末梢神経に大別される。中枢神経は多数のニューロンが集まり情報処理を行う。' },
+            { id:7, cat:'basic', catLabel:'基礎', q:'内臓の働きを無意識に調節する神経系を総称して何というか。', a:'自律神経（じりつしんけい）', e:'交感神経と副交感神経からなり、心臓や消化管などを意思と無関係に調節し、ホメオスタシスを維持する。' },
+            { id:8, cat:'basic', catLabel:'基礎', q:'自律神経のうち、主に活発な状態や興奮時に働く神経の名称を答えよ。', a:'交感神経（こうかんしんけい）', e:'心拍数増加・瞳孔散大・消化抑制など闘争・逃走反応を引き起こす。副交感神経は休息時に優位。' },
+            { id:9, cat:'basic', catLabel:'基礎', q:'骨格筋の収縮に直接必要なエネルギー物質の略称（アルファベット3文字）は何か。', a:'ATP（アデノシン三リン酸）', e:'生体内のエネルギー通貨。細胞呼吸で合成され、筋収縮や能動輸送などあらゆる生命活動に使われる。' },
+            { id:10, cat:'basic', catLabel:'基礎', q:'体内で生じた有害なアンモニアを毒性の低い尿素に変える役割をもつ臓器はどこか。', a:'肝臓（かんぞう）', e:'肝臓の尿素回路でアンモニアが尿素に変換され、血液で腎臓へ運ばれて尿として排出される。' },
+            { id:11, cat:'basic', catLabel:'基礎', q:'血液をろ過して尿をつくる臓器は何か。', a:'腎臓（じんぞう）', e:'糸球体で血液をろ過して原尿をつくり、細尿管で必要な物質を再吸収した後、尿として排出する。' },
+            { id:12, cat:'basic', catLabel:'基礎', q:'腎臓で血液がろ過されてできる原尿から、必要な栄養分を再び血液中に取り戻すはたらきを何というか。', a:'再吸収（さいきゅうしゅう）', e:'グルコースやアミノ酸などは細尿管でほぼ100％再吸収される。尿に糖が出る場合は糖尿病の疑い。' },
+            { id:13, cat:'basic', catLabel:'基礎', q:'目の遠近調節で、遠くを見るとき水晶体の厚さはどのように変化するか。', a:'薄くなる', e:'毛様筋がゆるみ、チン小帯が引っ張られて水晶体が薄くなる。屈折力が弱まり遠景にピントが合う。' },
+            { id:14, cat:'basic', catLabel:'基礎', q:'腕を曲げるとき、上腕二頭筋と上腕三頭筋の状態（収縮か弛緩か）をそれぞれ答えよ。', a:'上腕二頭筋：収縮 ／ 上腕三頭筋：弛緩', e:'拮抗筋が交互に収縮・弛緩することで関節が動く。腕を伸ばすときは上腕三頭筋が収縮する。' },
+            { id:15, cat:'basic', catLabel:'基礎', q:'明るい場所から暗い場所に入ったとき、しだいに見えるようになる現象を何というか。', a:'暗順応（あんじゅんのう）', e:'桿体細胞のロドプシンが再合成され感度が上昇する現象。完全に順応するまで約20〜30分かかる。' },
+            { id:16, cat:'basic', catLabel:'基礎', q:'熱いものに触れた瞬間、脳で感じる前に脊髄が命令を出して筋肉が動く無意識の反応を何というか。', a:'反射（脊髄反射）', e:'危険から素早く身を守るシステム。大脳を経由せず脊髄が直接指令を出すため反応時間が非常に短い。' },
+            { id:17, cat:'basic', catLabel:'基礎', q:'筋肉を構成する「収縮・弛緩」を繰り返す繊維状の細胞を何というか。', a:'筋繊維（きんせんい）', e:'骨格筋・平滑筋・心筋はすべて筋繊維の束で構成され、内部にアクチンとミオシンが規則正しく並ぶ。' },
+            { id:18, cat:'basic', catLabel:'基礎', q:'骨格筋と内臓壁の筋肉（平滑筋）で、疲労しやすいのはどちらか。', a:'骨格筋', e:'骨格筋は収縮が速く力も強いが疲労しやすい。平滑筋はゆるやかで疲れにくく、心筋も疲労しにくい。' },
+            { id:19, cat:'basic', catLabel:'基礎', q:'ヒトの盲斑（盲点）には何の細胞が存在しないか。', a:'視細胞（桿体細胞・錐体細胞）', e:'視神経が眼球を出る部位で、視細胞が全くないため、そこに像が結ばれても認識できない。' },
+            { id:20, cat:'basic', catLabel:'基礎', q:'眼の桿体細胞にある明暗用の感光色素の名称は何か。', a:'ロドプシン（視紅）', e:'光でオプシンとレチナールに分解され、電気信号のきっかけとなる。暗所で再合成され感度回復。' },
+            { id:21, cat:'basic', catLabel:'基礎', q:'網膜にある視細胞のうち、明所で働き色を識別する細胞を何というか。', a:'錐体細胞（すいたいさいぼう）', e:'赤・緑・青の3種類があり色覚を担う。黄斑の中心窩に密集し、最も視力が鋭い部分を形成する。' },
+            { id:22, cat:'basic', catLabel:'基礎', q:'耳の構造で、鼓膜の振動を増幅して内耳に伝える3つの小さな骨を総称して何というか。', a:'耳小骨（じしょうこつ）', e:'ツチ骨・キヌタ骨・アブミ骨からなり、てこの原理で振動を増幅し、蝸牛のリンパ液に伝える。' },
+            { id:23, cat:'basic', catLabel:'基礎', q:'皮膚にある感覚点のうち、高い温度を感知するものを何というか。', a:'温点（おんてん）', e:'痛点・触点（圧点）・冷点・温点の4種類が分布し、温点は温かさを感知する。' },
+            { id:24, cat:'basic', catLabel:'基礎', q:'嗅覚の受容器であり、空気中の化学物質を感知する鼻の上皮を何というか。', a:'嗅上皮（きゅうじょうひ）', e:'鼻腔天井部にあり、嗅細胞がにおい分子を受容。嗅神経が直接大脳辺縁系へ情報を送る。' },
+            { id:25, cat:'basic', catLabel:'基礎', q:'舌にある味覚の受容器で、液体中の化学物質を感知する構造を何というか。', a:'味蕾（みらい）／味覚芽', e:'味蕾内の味細胞が甘味・塩味・酸味・苦味・うま味の五基本味を感知し、顔面神経などで脳へ伝える。' },
+            // 仕組み (26-40)
+            { id:26, cat:'mechanism', catLabel:'仕組み', q:'大きな音を聞いたときの聴覚の伝わり方を、「耳介」から「大脳」まで主要な中継点を順に説明せよ。', a:'耳介 → 外耳道 → 鼓膜 → 耳小骨 → 蝸牛(コルチ器) → 聴神経 → 大脳', e:'音波は耳介で集められ外耳道を通り鼓膜を振動。耳小骨で増幅され蝸牛のリンパ液に伝わり、コルチ器で電気信号に変換される。' },
+            { id:27, cat:'mechanism', catLabel:'仕組み', q:'瞳孔が明るい場所で小さくなる仕組み（対光反射）を、神経経路に触れて説明せよ。', a:'網膜の光受容 → 視神経 → 中脳(対光反射中枢) → 動眼神経(副交感神経) → 虹彩の瞳孔括約筋が収縮 → 瞳孔が縮小', e:'強い光で網膜が刺激されると、中脳を経由して副交感神経が虹彩の括約筋を収縮させ瞳孔が小さくなる。意識的な制御を受けない反射である。' },
+            { id:28, cat:'mechanism', catLabel:'仕組み', q:'熱いものに触れて手を引っこめる屈曲反射の経路を、受容器から効果器まで正しい順序で述べよ。', a:'皮膚（受容器）→ 感覚神経 → 脊髄 → 運動神経 → 筋肉（効果器）', e:'熱刺激は皮膚の痛点・温点が受容し、感覚神経を通って脊髄へ。脊髄で運動ニューロンに指令が出され、大脳を経由せずに筋肉が収縮する。' },
+            { id:29, cat:'mechanism', catLabel:'仕組み', q:'腕を伸ばす動作のとき、上腕二頭筋と上腕三頭筋が協調する仕組みを「拮抗筋」という言葉を用いて説明せよ。', a:'上腕二頭筋が弛緩し、上腕三頭筋が収縮する。拮抗筋が交互に収縮・弛緩することで肘関節の伸展が可能になる。', e:'筋肉は収縮しかできないため、対になる拮抗筋の切り替えが必須。腕を曲げるときは上腕二頭筋が収縮、上腕三頭筋が弛緩する。' },
+            { id:30, cat:'mechanism', catLabel:'仕組み', q:'腎臓の糸球体で血球や血しょうタンパク質がこし出されない理由を説明せよ。（高校レベル）', a:'糸球体のろ過膜（有窓内皮・基底膜・スリット膜）が高分子を通さないため。', e:'水や低分子物質は通過できるが、赤血球やアルブミンなどの血しょうタンパク質は孔径制限により原尿に入らない。' },
+            { id:31, cat:'mechanism', catLabel:'仕組み', q:'呼吸によってATPが合成される過程を、酸素とグルコースの関与に着目して簡潔に述べよ。', a:'細胞が酸素とグルコースを取り入れ、ミトコンドリアで二酸化炭素と水に分解する際に放出されるエネルギーでATPが合成される。', e:'化学反応式：C₆H₁₂O₆ + 6O₂ → 6CO₂ + 6H₂O + エネルギー(ATP)。呼吸は異化の代表例。' },
+            { id:32, cat:'mechanism', catLabel:'仕組み', q:'目の毛様筋が収縮すると水晶体が厚くなる理由を、チン小帯の緊張変化とともに説明せよ。', a:'毛様筋収縮 → チン小帯がゆるむ → 水晶体が自身の弾性で厚くなる（屈折力増大）。これで近くにピントが合う。', e:'遠くを見るときは毛様筋が弛緩し、チン小帯が引っ張られて水晶体が薄くなる。逆の調節で遠近両用。' },
+            { id:33, cat:'mechanism', catLabel:'仕組み', q:'自律神経系のうち交感神経と副交感神経のはたらきを、心臓と消化管を例にして対比させて説明せよ。', a:'交感神経：心拍数増加・消化管運動抑制。副交感神経：心拍数低下・消化管運動促進。', e:'交感神経は活動時に優位でエネルギー動員、副交感神経は休息時に優位でエネルギー蓄積・消化促進。' },
+            { id:34, cat:'mechanism', catLabel:'仕組み', q:'興奮がニューロン内を伝わる「興奮伝導」と、シナプスを越える「シナプス伝達」の違いを説明せよ。（高校基礎）', a:'興奮伝導：軸索上を活動電位（電気信号）が伝わる。シナプス伝達：神経伝達物質（化学物質）が放出され次のニューロンに伝わる。', e:'伝導は電気的で跳躍伝導により高速。シナプス伝達は化学的で情報の統合・調節が可能。' },
+            { id:35, cat:'mechanism', catLabel:'仕組み', q:'暗順応時に桿体細胞で起こるロドプシンの変化と、感度上昇のメカニズムを説明せよ。（高校基礎）', a:'暗所でロドプシン（オプシン＋レチナール）が再合成され、桿体細胞の光感受性が徐々に回復・上昇する。', e:'明所で分解されたロドプシンが暗所で再合成され、光に対する感度が高まり、わずかな光でも明暗を感じられるようになる。' },
+            { id:36, cat:'mechanism', catLabel:'仕組み', q:'骨格筋の筋収縮におけるスライディングフィラメント説の概略を説明せよ。（高校発展）', a:'アクチンフィラメントとミオシンフィラメントが互いに滑り込み、筋節（サルコメア）が短縮することで収縮する。', e:'ATPのエネルギーでミオシン頭部がアクチンに結合・屈曲し、フィラメントを引き寄せる。収縮にはATPが必要。' },
+            { id:37, cat:'mechanism', catLabel:'仕組み', q:'骨格の主な役割を5つ挙げよ。', a:'①体の支持 ②運動の支点 ③脳や内臓の保護 ④造血（血液の産生） ⑤カルシウムの貯蔵', e:'骨は単なる枠組みではなく、骨髄での造血やカルシウム貯蔵という重要な代謝機能も持つ。' },
+            { id:38, cat:'mechanism', catLabel:'仕組み', q:'骨格筋・平滑筋・心筋の違いを、収縮速度・疲労しやすさ・意識的制御の可否で比較せよ。', a:'骨格筋：速い・疲労しやすい・随意。平滑筋：ゆるやか・疲労しにくい・不随意。心筋：リズミカル・疲労しにくい・不随意。', e:'骨格筋は体性神経支配、平滑筋と心筋は自律神経支配。心筋には自動能がある。' },
+            { id:39, cat:'mechanism', catLabel:'仕組み', q:'明順応とはどのような現象か。暗順応との違いを含めて説明せよ。', a:'暗所から明所に出たとき、桿体細胞のロドプシンが分解されて感度が下がり、錐体細胞が代わりに機能することで正常に見えるようになる現象。', e:'暗順応が桿体細胞の感度上昇であるのに対し、明順応は桿体細胞の感度低下と錐体細胞への切り替え。約1分で完了する。' },
+            { id:40, cat:'mechanism', catLabel:'仕組み', q:'ヒトの体内で、尿素はどのような経路で腎臓まで運ばれ、尿として排出されるか説明せよ。', a:'肝臓で生成 → 血液(血しょう) → 腎動脈 → 糸球体でろ過 → 細尿管で一部再吸収 → 尿として排出', e:'尿素は肝臓の尿素回路で合成され、血しょう中に溶けて運ばれる。腎臓の糸球体でろ過され、約50％が再吸収されずに尿へ。' },
+            // 応用 (41-60)
+            { id:41, cat:'advanced', catLabel:'応用', q:'網膜の黄斑（中心窩）と盲斑（盲点）について、視細胞の分布の違いと見え方の違いを説明せよ。', a:'黄斑：錐体細胞が密集し最も視力が鋭い。盲斑：視細胞が存在せず、像を結んでも見えない。', e:'黄斑の中心窩には錐体のみ高密度で存在。盲斑は視神経出口で桿体・錐体ともになく、視野が欠損するが両眼で補完。' },
+            { id:42, cat:'advanced', catLabel:'応用', q:'反射が進化の過程で生物にもたらしたメリットを、大脳を経由する反応と比較して生存確率の観点から論じよ。', a:'反射は脊髄で直接指令を出すため反応時間が非常に短く、危険から素早く身を守ることで生存確率を高めた。', e:'大脳皮質を経由する意識的反応は情報処理に数百msかかるが、反射はコンマ数秒で反応可能。捕食者回避や熱源からの逃避に有利。ただし複雑判断はできない。' },
+            { id:43, cat:'advanced', catLabel:'応用', q:'なぜ人は「赤外線」を色として見ることはできないが、熱として感じることができるのか。視細胞と皮膚の受容器の特性から説明せよ。', a:'視細胞（桿体・錐体）は可視光のみ感受し赤外線に反応しないが、皮膚の温点は赤外線の熱エネルギーを感知できるため。', e:'ロドプシンやフォトプシンは可視光波長域(380〜780nm)専用。赤外線は光受容タンパク質を変化させられないが、皮膚の自由神経終末が温度上昇を感知する。' },
+            { id:44, cat:'advanced', catLabel:'応用', q:'夏の暑い日に激しい運動をして大量の汗をかいたとき、腎臓の細尿管における水の再吸収量と尿の量・濃度はどう変化するか。ホルモン名にも触れて説明せよ。', a:'バソプレシン（抗利尿ホルモン）分泌促進 → 水の再吸収増加。尿量は減少し、尿の濃度は高くなる（色が濃くなる）。', e:'発汗で血液浸透圧が上昇すると、脳下垂体後葉からバソプレシンが分泌され、集合管の水透過性を高めて水分を保持する。' },
+            { id:45, cat:'advanced', catLabel:'応用', q:'人工透析は腎臓のどの構造と機能を代替していると言えるか。糸球体ろ過と再吸収の観点から考察せよ。', a:'主に糸球体の「ろ過」機能を代替する。半透膜を用いて老廃物を除去するが、再吸収機能は基本的に代替しない。', e:'透析器のダイアライザーが糸球体ろ過膜に相当。細尿管の選択的再吸収（グルコース回収など）は行えないため、食事制限が必要。' },
+            { id:46, cat:'advanced', catLabel:'応用', q:'体内環境の恒常性（ホメオスタシス）を維持する上で、自律神経系とホルモンが協調している例を一つ挙げて説明せよ。', a:'体温調節：暑いときは交感神経抑制＋発汗促進、皮膚血管拡張。寒いときは交感神経興奮＋甲状腺ホルモン分泌促進で熱産生増加。', e:'視床下部が自律神経系と内分泌系を統合。暑熱時は放熱促進、寒冷時は熱産生と保温を協調して行う。' },
+            { id:47, cat:'advanced', catLabel:'応用', q:'「刺激と反応」のしくみを利用して筋電義手が動く原理を、筋電位の検出と運動神経の役割から説明せよ。', a:'断端部の筋肉が収縮する際に発生する筋電位を表面電極で検出し、信号を義手のモーター制御に利用する。', e:'脳からの運動指令で筋繊維に活動電位が発生。筋電義手はこの微弱な電位を拾い、アクチュエーターを駆動して把持動作を実現する。' },
+            { id:48, cat:'advanced', catLabel:'応用', q:'桿体細胞と錐体細胞の役割分担が、夜行性動物と昼行性動物の生活様式とどのように関係しているか考察せよ。', a:'夜行性動物は桿体細胞が発達し暗所視に優れ、昼行性動物は錐体細胞が発達し色覚・高視力に優れる傾向がある。', e:'フクロウやネコは桿体細胞が多く、タペタムにより光感度を増強。ヒトや鳥類は錐体細胞が豊富で色彩識別と高い空間分解能を獲得。' },
+            { id:49, cat:'advanced', catLabel:'応用', q:'盲斑（盲点）の存在を自分で確かめる簡単な実験方法を説明し、なぜ日常的には見えない部分が生じないのかを両眼視と脳の補完機能から説明せよ。', a:'紙に●と×を離して描き、片目で●を見つめながら紙を前後させ、×が消える距離を探す。日常では両眼視と脳のフィリングインで補完される。', e:'左右の目の盲点位置が異なるため両眼で互いにカバーし、さらに脳が周辺パターンから欠損部を自動補完するため意識されない。' },
+            { id:50, cat:'advanced', catLabel:'応用', q:'細胞内におけるATPの役割を、筋肉の収縮とナトリウムポンプ（Na⁺/K⁺-ATPase）を例にあげて説明せよ。（高校内容）', a:'筋収縮：ATPがミオシン頭部の滑り込み運動のエネルギー源。ナトリウムポンプ：ATPのエネルギーでNa⁺排出・K⁺取り込みを行い膜電位を維持。', e:'どちらもATP→ADP+Piの加水分解エネルギーを利用。共通のエネルギー通貨ATPが異なる生命現象を駆動する例である。' },
+            { id:51, cat:'advanced', catLabel:'応用', q:'パラリンピック選手が使うスポーツ義足は、単なる足の代わりではなく、どのように筋肉や関節の役割を補っているか考察せよ。', a:'カーボンファイバーなどの弾性素材が着地時の衝撃を弾性エネルギーとして蓄え、蹴り出し時に放出することで、筋肉と腱の弾性機能を工学的に模倣している。', e:'生体の下腿三頭筋やアキレス腱が行う伸張-短縮サイクルを板バネ構造で再現し、高効率の走行を可能にしている。' },
+            { id:52, cat:'advanced', catLabel:'応用', q:'神経系が発達したことによるデメリットとして、反応速度の低下以外にどのようなものが考えられるか。', a:'エネルギー消費の増大、脳の重量増加、複雑な情報処理ゆえの誤作動や精神疾患のリスクなど。', e:'高度な判断能力の代償として、脳は体重の約2％ながら全エネルギーの約20％を消費し、進化の過程で出産リスクも高まった。' },
+            { id:53, cat:'advanced', catLabel:'応用', q:'「あなたの見ている世界は、隣の人と同じか」という問いに対し、視覚の個人差（色覚多様性・盲点・錯覚）から論じよ。', a:'同じではない。錐体細胞の種類や数、水晶体の透過特性、脳の解釈プロセスが個人ごとに異なり、色覚異常や盲点補完の仕方も多様であるため。', e:'物理的刺激は同じでも、感覚器の感度や脳内処理が人それぞれで、主観的視覚世界は同一ではない。色覚多様性や錯覚の感じ方の違いが証拠となる。' },
+            { id:54, cat:'advanced', catLabel:'応用', q:'もし網膜の解像度が今の10倍だったら、生活はどう変わるか。メリットとデメリットを考察せよ。', a:'メリット：極めて細かい文字や遠方の物体を識別できる。デメリット：情報量が膨大になり脳の処理負荷が増大、眼球運動の微細化が要求され疲労しやすくなる。', e:'視細胞密度が10倍になると解像度は飛躍的に向上するが、視神経の情報伝送量も増え、エネルギー消費や視覚情報処理の遅延が生じる可能性がある。' },
+            { id:55, cat:'advanced', catLabel:'応用', q:'なぜ熱いものに触れた時、脳で「熱い」と思う前に手が動くのか。この反射の進化上のメリットを述べよ。', a:'脊髄反射により大脳を経由せずに運動指令が出るため、反応時間が短縮され、組織損傷を最小限に抑え生存確率が高まる。', e:'危険刺激に対する反応の遅れは重篤な傷害に直結する。反射は意識の介在を省略することで、コンマ数秒の差で身を守る仕組みとして進化した。' },
+            { id:56, cat:'advanced', catLabel:'応用', q:'「感覚器官は真実を伝えているのではなく、生き残るための情報を抽出している」とはどういう意味か、錯覚を例に説明せよ。', a:'感覚器は物理刺激をそのまま忠実に伝えるのではなく、生存に必要な情報を強調・取捨選択する。錯覚はその処理過程で生じる解釈の誤りである。', e:'たとえばミュラー・リヤー錯視では、奥行き手がかりを利用して線分の長さを誤認する。これは日常空間で奥行きを素早く判断するための脳の処理が優先されるため。' },
+            { id:57, cat:'advanced', catLabel:'応用', q:'刺激の受容から反応までの間に生じる機能障害に対し、テクノロジーを用いてどのようにサポートすべきか、視覚障害を例に提案せよ。', a:'網膜の視細胞が機能しない場合、人工網膜（電極アレイ）で視神経を直接刺激する、またはカメラ映像を触覚や聴覚に変換する感覚代行デバイスが考えられる。', e:'人工網膜は光を電気信号に変換し残存する神経節細胞を刺激する。また、音声や振動で周囲情報を伝える感覚代行も実用化されている。' },
+            { id:58, cat:'advanced', catLabel:'応用', q:'骨格筋の収縮と平滑筋の収縮では、カルシウムイオンの供給源と制御機構が異なる。その違いを簡潔に説明せよ。（高校発展）', a:'骨格筋：筋小胞体から放出されたCa²⁺がトロポニンに結合。平滑筋：細胞外からのCa²⁺流入とカルモジュリンを介した経路で制御される。', e:'骨格筋はトロポニン-トロポミオシン系、平滑筋はカルモジュリン-ミオシン軽鎖キナーゼ系と、収縮制御の分子機構が異なる。' },
+            { id:59, cat:'advanced', catLabel:'応用', q:'生体内の「エネルギー通貨」ATPは、排出器官の能動輸送にも使われる。腎臓のどの部分で、何の物質を再吸収するためにATPが使われるか例を挙げよ。', a:'近位尿細管でグルコースやアミノ酸、Na⁺の再吸収にATPが使われる（Na⁺-K⁺ ATPaseなど）。', e:'基底側膜のNa⁺ポンプがATPを使ってNa⁺を排出し、その濃度勾配を利用してグルコースなどが共輸送される。能動輸送の間接的駆動を含めATPが必要。' },
+            { id:60, cat:'advanced', catLabel:'応用', q:'「反射のコンマ数秒の短縮」の進化上のメリットを、具体例を挙げて説明せよ。', a:'熱いストーブに触れた際、0.1秒の短縮でも火傷の深度が大きく変わる。反射によって脊髄が即座に筋収縮を起こし、組織損傷を最小化する。', e:'侵害受容反射は、意識が痛みを感じる前に逃避行動を開始させる。この時間差が生存と繁殖成功に直結するため、自然選択で保存されてきた。' }
+        ];
+
+        // 状態管理
+        let shuffledIndices = [...Array(cards.length).keys()];
+        let currentPos = 0;
+        let isFlipped = false;
+
+        const cardScene = document.getElementById('cardScene');
+        const cardInner = document.getElementById('cardInner');
+        const frontBadge = document.getElementById('frontBadge');
+        const frontNum = document.getElementById('frontNum');
+        const questionText = document.getElementById('questionText');
+        const backBadge = document.getElementById('backBadge');
+        const backNum = document.getElementById('backNum');
+        const answerMain = document.getElementById('answerMain');
+        const explanationText = document.getElementById('explanationText');
+        const progressFill = document.getElementById('progressFill');
+        const counter = document.getElementById('counter');
+        const btnFlip = document.getElementById('btnFlip');
+
+        function getCurrentCard() {
+            return cards[shuffledIndices[currentPos]];
+        }
+
+        function renderCard() {
+            const card = getCurrentCard();
+            // 表
+            frontBadge.textContent = card.catLabel;
+            frontBadge.className = `badge ${card.cat}`;
+            frontNum.textContent = `#${card.id}`;
+            questionText.textContent = card.q;
+            // 裏
+            backBadge.textContent = card.catLabel;
+            backBadge.className = `badge ${card.cat}`;
+            backNum.textContent = `#${card.id}`;
+            answerMain.textContent = card.a;
+            explanationText.innerHTML = card.e;
+            // フリップ状態をリセット
+            if (isFlipped) {
+                cardInner.classList.remove('flipped');
+                isFlipped = false;
+                btnFlip.textContent = '💡 解答を見る';
+            }
+            // プログレス更新
+            const pct = ((currentPos + 1) / cards.length) * 100;
+            progressFill.style.width = `${pct}%`;
+            counter.textContent = `${currentPos + 1} / ${cards.length}`;
+        }
+
+        function flipCard() {
+            isFlipped = !isFlipped;
+            if (isFlipped) {
+                cardInner.classList.add('flipped');
+                btnFlip.textContent = '↩ 問題に戻る';
+            } else {
+                cardInner.classList.remove('flipped');
+                btnFlip.textContent = '💡 解答を見る';
+            }
+        }
+
+        function nextCard() {
+            if (currentPos < cards.length - 1) {
+                currentPos++;
+                renderCard();
+            }
+        }
+
+        function prevCard() {
+            if (currentPos > 0) {
+                currentPos--;
+                renderCard();
+            }
+        }
+
+        function shuffleCards() {
+            // Fisher-Yates
+            for (let i = shuffledIndices.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [shuffledIndices[i], shuffledIndices[j]] = [shuffledIndices[j], shuffledIndices[i]];
+            }
+            currentPos = 0;
+            renderCard();
+        }
+
+        // イベント
+        document.getElementById('btnNext').addEventListener('click', nextCard);
+        document.getElementById('btnPrev').addEventListener('click', prevCard);
+        document.getElementById('btnShuffle').addEventListener('click', shuffleCards);
+        document.getElementById('btnFlip').addEventListener('click', (e) => {
+            e.stopPropagation();
+            flipCard();
+        });
+        cardScene.addEventListener('click', flipCard);
+
+        // 初期表示
+        renderCard();
+    })();
+</script>
+</body>
+</html>
